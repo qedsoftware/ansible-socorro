@@ -1,5 +1,8 @@
-socorro
-=======
+socorro |travis|
+================
+
+.. |travis| image:: https://travis-ci.org/qedsoftware/ansible-socorro.svg?branch=master
+  :target: https://travis-ci.org/qedsoftware/ansible-socorro/builds
 
 Install Socorro (processor and collector components) and Kibana.
 
