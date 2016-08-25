@@ -200,3 +200,29 @@
   service: name=socorro-kibana state=started
   become: yes
   become_user: root
+
+- name: Upload testing dump
+  copy:
+    dest="{{ socorro_symbols_temp_dir }}/segfault.dmp"
+    src=segfault.dmp
+
+- name: Upload testing dump (remote test)
+  command: "curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ inventory_hostname }}:5000/submit'"
+  args:
+    chdir: "{{ socorro_symbols_temp_dir }}"
+  register: x
+
+- debug: msg="{{ x.cmd }}"
+- debug: msg="{{ x.stdout_lines }}"
+
+- name: Upload testing dump (local test)
+  local_action: "command curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ inventory_hostname }}:5000/submit'"
+  args:
+    chdir: "{{ role_path }}/files"
+  register: x
+  become: false
+
+- debug: msg="{{ x.cmd }}"
+- debug: msg="{{ x.stdout_lines }}"
+
+- debug: msg="Visit http://{{ inventory_hostname }}:5601 and search for 'socorro_reports'"
