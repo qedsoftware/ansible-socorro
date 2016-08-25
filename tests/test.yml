@@ -1,0 +1,25 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+- hosts: localhost
+  tasks:
+    - name: Create 'socorro' group
+      become: yes
+      group:
+        name=socorro
+    - name: Create 'socorro' user
+      become: yes
+      user:
+        name=socorro
+        group=socorro
+
+- hosts: localhost
+  become_user: socorro
+  become: yes
+  roles:
+    - socorro
+  vars:
+    socorro_upload_testing_symbols:
+      - demoapp.sym
+      - libMakeSegv.so.sym
