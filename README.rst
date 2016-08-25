@@ -46,6 +46,18 @@ searched in ``files`` directory):
         - demoapp.sym
         - libMakeSegv.so.sym
 
+Run on testing environment:
+
+.. code-block:: shell
+
+  > ansible-playbook --inventory-file stage stage.yml --ask-become-pass
+
+Run on production:
+
+.. code-block:: shell
+
+  > ansible-playbook --inventory-file prod prod.yml --ask-become-pass
+
 License
 -------
 
