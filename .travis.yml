@@ -7,6 +7,9 @@ python:
 sudo:
   - required
 
+dist:
+  - trusty
+
 install:
   - sudo pip install 'requests[security]'
   - sudo pip install ansible

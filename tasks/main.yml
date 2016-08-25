@@ -179,6 +179,10 @@
     target: dev
     params:
       NUM_THREADS=8
+  # If external 'virtualenv' already activated don't use it since we may
+  # have no permissions to modify it (see Travis CI run)
+  environment:
+    VIRTUAL_ENV: ""
 
 - name: Setup Elasticsearch database
   command: python ./setup_supersearch_app.py --elasticsearch.elasticsearch.elasticsearch_index=socorro_reports --resource.elasticsearch.elasticsearch_index=socorro_reports
