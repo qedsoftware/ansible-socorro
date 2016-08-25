@@ -1,0 +1,198 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+- name: Add Elasticsearch APT key
+  apt_key: url=https://packages.elasticsearch.org/GPG-KEY-elasticsearch
+  become: yes
+  become_user: root
+
+- name: Add Elasticsearch repository
+  apt_repository:
+    repo='deb http://packages.elastic.co/elasticsearch/1.4/debian stable main'
+    update_cache=yes
+  become: yes
+  become_user: root
+
+# http://askubuntu.com/a/320271/206498
+- name: Cleanup packages
+  apt: name={{ item }} state=absent update_cache=no purge=yes
+  with_items:
+    - node
+  become: yes
+  become_user: root
+
+- name: Install dependencies
+  apt: name={{ item }} state=latest update_cache=yes cache_valid_time=3600
+  with_items:
+    - build-essential
+    - subversion
+    - libpq-dev
+    - openjdk-7-jre
+    - python-virtualenv
+    - python-dev
+    - rsync
+    - python2.7
+    - python2.7-dev
+    - libxslt1-dev
+    - git-core
+    - mercurial
+    - node-less
+    - rabbitmq-server
+    - elasticsearch
+    - memcached
+    - libsasl2-dev
+    - libcurl4-openssl-dev
+    - npm
+    - nodejs-legacy
+    - libffi-dev # needed for Ubuntu 14.04 (trusty)
+  become: yes
+  become_user: root
+
+# Needed for "Setup Elasticsearch database"
+- name: Start Elasticsearch service
+  service: name=elasticsearch state=started
+  become: yes
+  become_user: root
+
+- name: Test 'npm'
+  shell: npm --version
+  register: x
+
+- name: "'npm' version"
+  debug:
+    msg: "npm version {{ x.stdout_lines }}"
+
+- name: Test 'node'
+  shell: /usr/bin/env node --version
+  register: x
+
+- name: "'node' version"
+  debug:
+    msg: "node version {{ x.stdout_lines }}"
+
+- name: Add socorro-honcho service
+  template:
+    src=socorro-honcho.j2
+    dest=/etc/init/socorro-honcho.conf
+    backup=yes
+  become: yes
+  become_user: root
+
+- name: "Add socorro-kibana service"
+  template:
+    src=socorro-kibana.j2
+    dest=/etc/init/socorro-kibana.conf
+    backup=yes
+  become: yes
+  become_user: root
+
+- name: Download Kibana archive
+  get_url:
+    url=https://download.elastic.co/kibana/kibana/kibana-4.1.11-linux-x64.tar.gz
+    dest="{{ ansible_env.HOME }}/kibana.tar.gz"
+    checksum=sha256:406fd817ce9e95bc65ac06361726361bdf82fdccdee1a7f6509fc10ab77654e9
+
+- name: Unpack Kibana archive ({{ ansible_env.HOME }})
+  command: tar xf "{{ ansible_env.HOME }}/kibana.tar.gz"
+  args:
+    chdir: "{{ ansible_env.HOME }}"
+
+- name: Clone Socorro repository ({{ socorro_working_dir }})
+  git:
+    repo=https://github.com/mozilla/socorro
+    dest="{{ socorro_working_dir }}"
+    version=206
+    force=yes # we will patch some files in working copy (like `cbootstrap.sh` or `Procfile`)
+
+# Sometimes this URL return '500 Internal Error'
+- name: Patch bootstrap script
+  replace:
+    dest="{{ socorro_working_dir }}/scripts/bootstrap.sh"
+    regexp='https://index\.taskcluster\.net/v1/task/project\.socorro\.breakpad\.v1\.builds\.linux64\.latest/artifacts/public/breakpad\.tar\.gz'
+    backup=yes
+    replace='https://github.com/qedsoftware/ansible-socorro/releases/download/breakpad/breakpad.tar.gz'
+
+# 'wget -N' will fail if archive present
+- name: Remove breakpad archive
+  file:
+    dest="{{ socorro_working_dir }}/breakpad.tar.gz"
+    state=absent
+
+- name: Configure collector
+  template:
+    src=collector.j2
+    dest="{{ socorro_working_dir }}/config/SocorroWelcomeApp.ini"
+    backup=yes
+
+- name: Configure processor
+  template:
+    src=processor.j2
+    dest="{{ socorro_working_dir }}/config/processor.ini"
+    backup=yes
+
+- name: Configure Procfile
+  template:
+    src=Procfile.j2
+    dest="{{ socorro_working_dir }}/Procfile"
+    backup=yes
+
+- name: Create temporary symbols directory
+  file:
+    path="{{ socorro_symbols_temp_dir }}"
+    state=directory
+
+- name: Upload helper script
+  copy:
+    dest="{{ socorro_symbols_temp_dir }}/copy-symbol.sh"
+    src=copy-symbol.sh
+    mode=0755
+
+- name: Upload testing symbols
+  copy:
+    dest="{{ socorro_symbols_temp_dir }}/{{ item }}"
+    src="{{ item }}"
+  with_items:
+    - "{{ socorro_upload_testing_symbols }}"
+
+- name: Copy testing symbols to directory
+  command: ./copy-symbol.sh {{ item }} {{ socorro_symbols_dir }}
+  args:
+    chdir: "{{ socorro_symbols_temp_dir }}"
+  with_items:
+    - "{{ socorro_upload_testing_symbols }}"
+
+- name: Stop socorro-honcho service
+  service: name=socorro-honcho state=stopped
+  become: yes
+  become_user: root
+
+- name: Stop socorro-kibana service
+  service: name=socorro-kibana state=stopped
+  become: yes
+  become_user: root
+
+- name: Run build
+  make:
+    chdir: "{{ socorro_working_dir }}"
+    target: dev
+    params:
+      NUM_THREADS=8
+
+- name: Setup Elasticsearch database
+  command: python ./setup_supersearch_app.py --elasticsearch.elasticsearch.elasticsearch_index=socorro_reports --resource.elasticsearch.elasticsearch_index=socorro_reports
+  args:
+    chdir: "{{ socorro_working_dir }}/scripts"
+  environment:
+    PATH: "{{ socorro_virtualenv_bin_dir }}:{{ ansible_env.PATH }}"
+
+- name: Start socorro-honcho service
+  service: name=socorro-honcho state=started
+  become: yes
+  become_user: root
+
+- name: Start socorro-kibana service
+  service: name=socorro-kibana state=started
+  become: yes
+  become_user: root
