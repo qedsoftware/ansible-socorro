@@ -176,7 +176,7 @@
 - name: Run build
   make:
     chdir: "{{ socorro_working_dir }}"
-    target: dev
+    target: install
     params:
       NUM_THREADS=8
   # If external 'virtualenv' already activated don't use it since we may
@@ -190,6 +190,7 @@
     chdir: "{{ socorro_working_dir }}/scripts"
   environment:
     PATH: "{{ socorro_virtualenv_bin_dir }}:{{ ansible_env.PATH }}"
+    VIRTUAL_ENV: ""
 
 - name: Start socorro-honcho service
   service: name=socorro-honcho state=started
