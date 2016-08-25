@@ -14,7 +14,7 @@ install:
 script:
   # Fix layout
   - cd ..
-  - mv ansible-socoroo socorro
+  - mv ansible-socorro socorro
   - cd socorro
 
   - python --version
