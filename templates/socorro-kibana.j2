@@ -1,0 +1,11 @@
+#!upstart
+
+description "Start kibana for Socorro"
+
+start on startup
+stop on shutdown
+
+setuid socorro
+
+exec "{{ ansible_env.HOME }}/kibana-4.1.11-linux-x64/bin/kibana"
+chdir "{{ ansible_env.HOME }}/kibana-4.1.11-linux-x64"

@@ -1,0 +1,14 @@
+#!upstart
+
+description "Start honcho server for Socorro"
+
+start on startup
+stop on shutdown
+
+setuid socorro
+
+chdir "{{ socorro_working_dir }}"
+
+env PATH="{{ socorro_virtualenv_bin_dir }}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+exec honcho start

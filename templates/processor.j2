@@ -1,0 +1,37 @@
+[new_crash_source]
+
+  crashstorage_class='socorro.external.fs.crashstorage.FSDatedPermanentStorage'
+  new_crash_source_class='socorro.external.fs.fs_new_crash_source.FSNewCrashSource'
+
+[source]
+
+  crashstorage_class='socorro.external.fs.crashstorage.FSPermanentStorage'
+
+[processor]
+
+  [[raw_to_processed_transform]]
+
+    [[[BreakpadStackwalkerRule]]]
+
+      processor_symbols_pathname_list='{{ socorro_symbols_dir }}'
+      minidump_stackwalk_pathname='{{ socorro_working_dir }}/stackwalk/bin/stackwalker'
+
+[resource]
+
+  [[elasticsearch]]
+
+    elasticsearch_index='socorro_reports'
+    elasticSearchHostname='localhost'
+
+[destination]
+
+  crashstorage_class=socorro.external.crashstorage_base.PolyCrashStorage
+  storage_classes='socorro.external.fs.crashstorage.FSPermanentStorage, socorro.external.es.crashstorage.ESCrashStorage'
+
+  [[storage0]]
+
+    crashstorage_class=socorro.external.fs.crashstorage.FSPermanentStorage
+
+  [[storage1]]
+
+    crashstorage_class=socorro.external.es.crashstorage.ESCrashStorage
