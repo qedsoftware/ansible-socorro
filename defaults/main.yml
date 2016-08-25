@@ -1,0 +1,9 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+socorro_working_dir: "{{ ansible_env.HOME }}/socorro"
+socorro_virtualenv_bin_dir: "{{ socorro_working_dir }}/socorro-virtualenv/bin"
+socorro_symbols_dir: "{{ ansible_env.HOME }}/socorro-symbols"
+socorro_symbols_temp_dir: "{{ ansible_env.HOME }}/__temp-symbols"
