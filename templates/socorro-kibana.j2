@@ -5,6 +5,8 @@ description "Start kibana for Socorro"
 start on startup
 stop on shutdown
 
+console log
+
 setuid socorro
 
 exec "{{ ansible_env.HOME }}/kibana-4.1.11-linux-x64/bin/kibana"

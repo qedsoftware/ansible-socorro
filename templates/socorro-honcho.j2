@@ -5,6 +5,8 @@ description "Start honcho server for Socorro"
 start on startup
 stop on shutdown
 
+console log
+
 setuid socorro
 
 chdir "{{ socorro_working_dir }}"
