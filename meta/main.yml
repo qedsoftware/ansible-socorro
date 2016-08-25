@@ -1,0 +1,24 @@
+galaxy_info:
+
+  author: Ruslan Baratov <ruslan@qed.ai>
+
+  description: Install Socorro and Kibana
+
+  company: Quantitative Engineering Design Inc.
+
+  issue_tracker_url: https://github.com/qedsoftware/ansible-socorro/issues
+
+  license: BSD
+
+  min_ansible_version: 1.2
+
+  platforms:
+  - name: Ubuntu
+    versions:
+    - trusty
+
+  galaxy_tags:
+    - socorro
+    - kibana
+    - breakpad
+    - crashpad
