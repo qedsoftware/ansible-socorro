@@ -1,0 +1,16 @@
+#!upstart
+
+description "Start Socorro processor"
+
+start on startup
+stop on shutdown
+
+console log
+
+setuid socorro
+
+chdir "{{ socorro_working_dir }}"
+
+env PATH="{{ socorro_virtualenv_bin_dir }}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+exec socorro/processor/processor_app.py --admin.conf=config/processor.ini
