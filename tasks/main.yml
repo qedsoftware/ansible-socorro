@@ -50,6 +50,30 @@
   become: yes
   become_user: root
 
+- name: Check port 5000
+  command: lsof -i :5000
+  register: x
+  ignore_errors: yes
+  become: yes
+  become_user: root
+- debug: msg="{{ x.stdout_lines }}"
+
+- name: Check port 9200
+  command: lsof -i :9200
+  register: x
+  ignore_errors: yes
+  become: yes
+  become_user: root
+- debug: msg="{{ x.stdout_lines }}"
+
+- name: Check port 5601
+  command: lsof -i :5601
+  register: x
+  ignore_errors: yes
+  become: yes
+  become_user: root
+- debug: msg="{{ x.stdout_lines }}"
+
 # Needed for "Setup Elasticsearch database"
 - name: Start Elasticsearch service
   service: name=elasticsearch state=started
