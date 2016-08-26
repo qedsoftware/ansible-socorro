@@ -50,6 +50,38 @@
   become: yes
   become_user: root
 
+- name: Test 'npm'
+  shell: npm --version
+  register: x
+
+- name: "'npm' version"
+  debug:
+    msg: "npm version {{ x.stdout_lines }}"
+
+- name: Test 'node'
+  shell: /usr/bin/env node --version
+  register: x
+
+- name: "'node' version"
+  debug:
+    msg: "node version {{ x.stdout_lines }}"
+
+- name: Add socorro-honcho service
+  template:
+    src=socorro-honcho.j2
+    dest=/etc/init/socorro-honcho.conf
+    backup=yes
+  become: yes
+  become_user: root
+
+- name: Add socorro-kibana service
+  template:
+    src=socorro-kibana.j2
+    dest=/etc/init/socorro-kibana.conf
+    backup=yes
+  become: yes
+  become_user: root
+
 - name: Stop socorro-honcho service
   service: name=socorro-honcho state=stopped
   become: yes
@@ -88,38 +120,6 @@
   become: yes
   become_user: root
 - debug: msg="{{ x.stdout_lines }}"
-
-- name: Test 'npm'
-  shell: npm --version
-  register: x
-
-- name: "'npm' version"
-  debug:
-    msg: "npm version {{ x.stdout_lines }}"
-
-- name: Test 'node'
-  shell: /usr/bin/env node --version
-  register: x
-
-- name: "'node' version"
-  debug:
-    msg: "node version {{ x.stdout_lines }}"
-
-- name: Add socorro-honcho service
-  template:
-    src=socorro-honcho.j2
-    dest=/etc/init/socorro-honcho.conf
-    backup=yes
-  become: yes
-  become_user: root
-
-- name: Add socorro-kibana service
-  template:
-    src=socorro-kibana.j2
-    dest=/etc/init/socorro-kibana.conf
-    backup=yes
-  become: yes
-  become_user: root
 
 - name: Download Kibana archive
   get_url:
