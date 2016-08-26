@@ -50,6 +50,21 @@
   become: yes
   become_user: root
 
+- name: Stop socorro-honcho service
+  service: name=socorro-honcho state=stopped
+  become: yes
+  become_user: root
+
+- name: Stop socorro-kibana service
+  service: name=socorro-kibana state=stopped
+  become: yes
+  become_user: root
+
+- name: Stop Elasticsearch service
+  service: name=elasticsearch state=stopped
+  become: yes
+  become_user: root
+
 - name: Check port 5000
   command: lsof -i :5000
   register: x
@@ -73,12 +88,6 @@
   become: yes
   become_user: root
 - debug: msg="{{ x.stdout_lines }}"
-
-# Needed for "Setup Elasticsearch database"
-- name: Start Elasticsearch service
-  service: name=elasticsearch state=started
-  become: yes
-  become_user: root
 
 - name: Test 'npm'
   shell: npm --version
@@ -104,7 +113,7 @@
   become: yes
   become_user: root
 
-- name: "Add socorro-kibana service"
+- name: Add socorro-kibana service
   template:
     src=socorro-kibana.j2
     dest=/etc/init/socorro-kibana.conf
@@ -128,7 +137,7 @@
     repo=https://github.com/mozilla/socorro
     dest="{{ socorro_working_dir }}"
     version=206
-    force=yes # we will patch some files in working copy (like `cbootstrap.sh` or `Procfile`)
+    force=yes # we will patch some files in working copy (like `bootstrap.sh` or `Procfile`)
 
 # Sometimes this URL return '500 Internal Error'
 - name: Patch bootstrap script
@@ -187,16 +196,6 @@
   with_items:
     - "{{ socorro_upload_testing_symbols }}"
 
-- name: Stop socorro-honcho service
-  service: name=socorro-honcho state=stopped
-  become: yes
-  become_user: root
-
-- name: Stop socorro-kibana service
-  service: name=socorro-kibana state=stopped
-  become: yes
-  become_user: root
-
 - name: Run build
   make:
     chdir: "{{ socorro_working_dir }}"
@@ -207,6 +206,12 @@
   # have no permissions to modify it (see Travis CI run)
   environment:
     VIRTUAL_ENV: ""
+
+# Needed for "Setup Elasticsearch database"
+- name: Start Elasticsearch service
+  service: name=elasticsearch state=started
+  become: yes
+  become_user: root
 
 - name: Setup Elasticsearch database
   command: python ./setup_supersearch_app.py --elasticsearch.elasticsearch.elasticsearch_index=socorro_reports --resource.elasticsearch.elasticsearch_index=socorro_reports
