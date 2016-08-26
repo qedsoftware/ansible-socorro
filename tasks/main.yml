@@ -182,6 +182,12 @@
     src=copy-symbol.sh
     mode=0755
 
+- name: Upload service waiting script
+  copy:
+    dest="{{ socorro_symbols_temp_dir }}/wait-for-port.sh"
+    src=wait-for-port.sh
+    mode=0755
+
 - name: Upload testing symbols
   copy:
     dest="{{ socorro_symbols_temp_dir }}/{{ item }}"
@@ -213,6 +219,11 @@
   become: yes
   become_user: root
 
+- name: Waiting for Elasticsearch port
+  command: ./wait-for-port.sh 9200
+  args:
+    chdir: "{{ socorro_symbols_temp_dir }}"
+
 - name: Setup Elasticsearch database
   command: python ./setup_supersearch_app.py --elasticsearch.elasticsearch.elasticsearch_index=socorro_reports --resource.elasticsearch.elasticsearch_index=socorro_reports
   args:
@@ -225,6 +236,11 @@
   service: name=socorro-honcho state=started
   become: yes
   become_user: root
+
+- name: Waiting for collector port
+  command: ./wait-for-port.sh 5000
+  args:
+    chdir: "{{ socorro_symbols_temp_dir }}"
 
 - name: Start socorro-kibana service
   service: name=socorro-kibana state=started
