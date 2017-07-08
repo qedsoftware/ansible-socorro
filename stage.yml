@@ -2,7 +2,17 @@
 # All Rights Reserved.
 
 ---
-- hosts: socorro
+
+- hosts: vagrant
+  gather_facts: False
+  tasks:
+    - name: dump Vagrant ssh config (vagrant only)
+      when: inventory_hostname=='vagrant'
+      become: False
+      local_action: shell vagrant ssh-config > vagrant-ssh-conf
+                    chdir="{{ playbook_dir }}"
+
+- hosts: socorro vagrant
   tasks:
     - name: Create 'socorro' group
       become: yes
@@ -14,7 +24,7 @@
         name=socorro
         group=socorro
 
-- hosts: socorro
+- hosts: socorro vagrant
   become_user: socorro
   become: yes
   roles:

@@ -188,20 +188,6 @@
     src=wait-for-port.sh
     mode=0755
 
-- name: Upload testing symbols
-  copy:
-    dest="{{ socorro_symbols_temp_dir }}/{{ item }}"
-    src="{{ item }}"
-  with_items:
-    - "{{ socorro_upload_testing_symbols }}"
-
-- name: Copy testing symbols to directory
-  command: ./copy-symbol.sh {{ item }} {{ socorro_symbols_dir }}
-  args:
-    chdir: "{{ socorro_symbols_temp_dir }}"
-  with_items:
-    - "{{ socorro_upload_testing_symbols }}"
-
 - name: Run build
   make:
     chdir: "{{ socorro_working_dir }}"
@@ -247,28 +233,52 @@
   become: yes
   become_user: root
 
+- name: Upload testing symbols
+  when: inventory_hostname!='vagrant'
+  copy:
+    dest="{{ socorro_symbols_temp_dir }}/{{ item }}"
+    src="{{ item }}"
+  with_items:
+    - "{{ socorro_upload_testing_symbols }}"
+
+- name: Copy testing symbols to directory
+  when: inventory_hostname!='vagrant'
+  command: ./copy-symbol.sh {{ item }} {{ socorro_symbols_dir }}
+  args:
+    chdir: "{{ socorro_symbols_temp_dir }}"
+  with_items:
+    - "{{ socorro_upload_testing_symbols }}"
+
 - name: Upload testing dump
+  when: inventory_hostname!='vagrant'
   copy:
     dest="{{ socorro_symbols_temp_dir }}/segfault.dmp"
     src=segfault.dmp
 
 - name: Upload testing dump (remote test)
-  command: "curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ inventory_hostname }}:5000/submit'"
+  when: inventory_hostname!='vagrant'
+  command: "curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ ansible_default_ipv4.address }}:5000/submit'"
   args:
     chdir: "{{ socorro_symbols_temp_dir }}"
   register: x
 
 - debug: msg="{{ x.cmd }}"
+  when: inventory_hostname!='vagrant'
 - debug: msg="{{ x.stdout_lines }}"
+  when: inventory_hostname!='vagrant'
 
 - name: Upload testing dump (local test)
-  local_action: "command curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ inventory_hostname }}:5000/submit'"
+  when: inventory_hostname!='vagrant'
+  local_action: "command curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ ansible_default_ipv4.address }}:5000/submit'"
   args:
     chdir: "{{ role_path }}/files"
   register: x
   become: false
 
 - debug: msg="{{ x.cmd }}"
+  when: inventory_hostname!='vagrant'
 - debug: msg="{{ x.stdout_lines }}"
+  when: inventory_hostname!='vagrant'
 
-- debug: msg="Visit http://{{ inventory_hostname }}:5601 and search for 'socorro_reports'"
+- debug: msg="Visit http://{{ ansible_default_ipv4.address }}:5601 and search for 'socorro_reports'"
+  when: inventory_hostname!='vagrant'
