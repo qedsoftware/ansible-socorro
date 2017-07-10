@@ -61,6 +61,13 @@ Run on production:
 
   > ansible-playbook --inventory-file prod prod.yml --ask-become-pass
 
+Note that if repo is cloned by git you need to set destination directory name
+to ``socorro`` since it must be a role name (see ``ansible.cfg``):
+
+.. code-block:: shell
+
+  > git clone https://github.com/qedsoftware/ansible-socorro socorro
+
 License
 -------
 
