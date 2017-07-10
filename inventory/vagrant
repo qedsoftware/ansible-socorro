@@ -1,0 +1,8 @@
+# vim: ft=dosini
+[vagrant]
+vagrant ansible_ssh_private_key_file=.vagrant/machines/default/virtualbox/private_key
+
+[vagrant:vars]
+ansible_ssh_host=default
+ansible_ssh_common_args=-F vagrant-ssh-conf -o IdentitiesOnly=no
+remove_offending_known_host_key=True
