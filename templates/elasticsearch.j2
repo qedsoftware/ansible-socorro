@@ -1,0 +1,12 @@
+#!upstart
+
+description "Start elasticsearch"
+
+start on startup
+stop on shutdown
+
+console log
+
+setuid socorro
+
+exec "{{ ansible_env.HOME }}/elasticsearch-1.4.5/bin/elasticsearch"
