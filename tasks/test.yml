@@ -1,0 +1,63 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+- name: Create temporary symbols directory
+  file:
+    path="{{ socorro_symbols_temp_dir }}"
+    state=directory
+
+- name: Upload helper script
+  copy:
+    dest="{{ socorro_symbols_temp_dir }}/copy-symbol.sh"
+    src=copy-symbol.sh
+    mode=0755
+
+- name: Upload testing symbols
+  when: ansible_socorro_run_tests
+  copy:
+    dest="{{ socorro_symbols_temp_dir }}/{{ item }}"
+    src="{{ item }}"
+  with_items:
+    - "{{ socorro_upload_testing_symbols }}"
+
+- name: Copy testing symbols to directory
+  when: ansible_socorro_run_tests
+  command: ./copy-symbol.sh {{ item }} {{ socorro_symbols_dir }}
+  args:
+    chdir: "{{ socorro_symbols_temp_dir }}"
+  with_items:
+    - "{{ socorro_upload_testing_symbols }}"
+
+
+- name: Upload testing dump
+  when: ansible_socorro_run_tests
+  copy:
+    dest="{{ socorro_symbols_temp_dir }}/segfault.dmp"
+    src=segfault.dmp
+
+- name: Upload testing dump (remote test)
+  when: ansible_socorro_run_tests
+  command: "curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ inventory_hostname }}:5000/submit'"
+  args:
+    chdir: "{{ socorro_symbols_temp_dir }}"
+  register: x
+
+- debug: msg="{{ x.cmd }}"
+  when: ansible_socorro_run_tests
+- debug: msg="{{ x.stdout_lines }}"
+  when: ansible_socorro_run_tests
+
+- name: Upload testing dump (local test)
+  when: ansible_socorro_run_tests
+  local_action: "command curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ inventory_hostname }}:5000/submit'"
+  args:
+    chdir: "{{ role_path }}/files"
+  register: x
+  become: false
+
+- debug: msg="{{ x.cmd }}"
+  when: ansible_socorro_run_tests
+- debug: msg="{{ x.stdout_lines }}"
+  when: ansible_socorro_run_tests

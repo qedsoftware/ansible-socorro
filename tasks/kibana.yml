@@ -1,0 +1,28 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+- name: Download Kibana archive
+  get_url:
+    url=https://download.elastic.co/kibana/kibana/kibana-4.1.11-linux-x64.tar.gz
+    dest="{{ ansible_env.HOME }}/kibana.tar.gz"
+    checksum=sha256:406fd817ce9e95bc65ac06361726361bdf82fdccdee1a7f6509fc10ab77654e9
+  notify:
+    - restart kibana
+
+- name: Unpack Kibana archive ({{ ansible_env.HOME }})
+  command: tar xf "{{ ansible_env.HOME }}/kibana.tar.gz"
+  args:
+    chdir: "{{ ansible_env.HOME }}"
+
+- name: Add socorro-kibana service
+  template:
+    src=upstart-kibana.conf.j2
+    dest=/etc/init/socorro-kibana.conf
+    backup=yes
+  become: yes
+  become_user: root
+  notify:
+    - restart kibana
+

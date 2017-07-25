@@ -1,0 +1,24 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+- name: Configure Nginx for Socorro Collector
+  template:
+    src=nginx-collector.conf.j2
+    dest=/etc/nginx/sites-available/collector.conf
+    backup=yes
+  become: yes
+  become_user: root
+  notify:
+    - restart nginx
+
+- name: Enable Nginx for Socorro Collector
+  file:
+    src=/etc/nginx/sites-available/collector.conf
+    dest=/etc/nginx/sites-enabled/collector.conf
+    state=link
+  become: yes
+  become_user: root
+  notify:
+    - restart nginx

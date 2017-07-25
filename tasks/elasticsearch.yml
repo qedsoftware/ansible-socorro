@@ -1,0 +1,28 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+# https://www.elastic.co/downloads/past-releases/elasticsearch-1-4-5
+- name: Download Elasticsearch archive
+  get_url:
+    url=https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.4.5.tar.gz
+    dest="{{ ansible_env.HOME }}/elasticsearch.tar.gz"
+    checksum=sha256:dc28aa9e441cbc3282ecc9cb498bea219355887b102aac872bdf05d5977356e2
+  notify:
+    - restart elasticsearch
+
+- name: Unpack Elasticsearch archive ({{ ansible_env.HOME }})
+  command: tar xf "{{ ansible_env.HOME }}/elasticsearch.tar.gz"
+  args:
+    chdir: "{{ ansible_env.HOME }}"
+
+- name: Add elasticsearch service
+  template:
+    src=upstart-elasticsearch.conf.j2
+    dest=/etc/init/elasticsearch.conf
+    backup=yes
+  become: yes
+  become_user: root
+  notify:
+    - restart elasticsearch

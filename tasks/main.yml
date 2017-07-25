@@ -3,106 +3,9 @@
 
 ---
 
-# http://askubuntu.com/a/320271/206498
-- name: Cleanup packages
-  apt: name={{ item }} state=absent update_cache=no purge=yes
-  with_items:
-    - node
-  become: yes
-  become_user: root
+- include: system.yml
 
-- name: Install dependencies
-  apt: name={{ item }} state=latest update_cache=yes cache_valid_time=3600
-  with_items:
-    - build-essential
-    - subversion
-    - libpq-dev
-    - openjdk-7-jre
-    - python-virtualenv
-    - python-dev
-    - rsync
-    - python2.7
-    - python2.7-dev
-    - libxslt1-dev
-    - git-core
-    - mercurial
-    - node-less
-    - rabbitmq-server
-    - memcached
-    - libsasl2-dev
-    - libcurl4-openssl-dev
-    - npm
-    - nodejs-legacy
-    - libffi-dev # needed for Ubuntu 14.04 (trusty)
-  become: yes
-  become_user: root
-
-- name: Test 'npm'
-  shell: npm --version
-  register: x
-
-- name: "'npm' version"
-  debug:
-    msg: "npm version {{ x.stdout_lines }}"
-
-- name: Test 'node'
-  shell: /usr/bin/env node --version
-  register: x
-
-- name: "'node' version"
-  debug:
-    msg: "node version {{ x.stdout_lines }}"
-
-- name: Add socorro-honcho service
-  template:
-    src=socorro-honcho.j2
-    dest=/etc/init/socorro-honcho.conf
-    backup=yes
-  become: yes
-  become_user: root
-
-- name: Add socorro-kibana service
-  template:
-    src=socorro-kibana.j2
-    dest=/etc/init/socorro-kibana.conf
-    backup=yes
-  become: yes
-  become_user: root
-
-- name: Stop socorro-honcho service
-  service: name=socorro-honcho state=stopped
-  become: yes
-  become_user: root
-
-- name: Stop socorro-kibana service
-  service: name=socorro-kibana state=stopped
-  become: yes
-  become_user: root
-
-# https://www.elastic.co/downloads/past-releases/elasticsearch-1-4-5
-- name: Download Elasticsearch archive
-  get_url:
-    url=https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.4.5.tar.gz
-    dest="{{ ansible_env.HOME }}/elasticsearch.tar.gz"
-    checksum=sha256:dc28aa9e441cbc3282ecc9cb498bea219355887b102aac872bdf05d5977356e2
-
-- name: Unpack Elasticsearch archive ({{ ansible_env.HOME }})
-  command: tar xf "{{ ansible_env.HOME }}/elasticsearch.tar.gz"
-  args:
-    chdir: "{{ ansible_env.HOME }}"
-
-- name: Add elasticsearch service
-  template:
-    src=elasticsearch.j2
-    dest=/etc/init/elasticsearch.conf
-    backup=yes
-  become: yes
-  become_user: root
-
-- name: Stop Elasticsearch service
-  service: name=elasticsearch state=stopped
-  become: yes
-  become_user: root
+- include: elasticsearch.yml
 
 - name: Check port 5000
   command: lsof -i :5000
@@ -128,110 +31,19 @@
   become_user: root
 - debug: msg="{{ x.stdout_lines }}"
 
-- name: Download Kibana archive
-  get_url:
-    url=https://download.elastic.co/kibana/kibana/kibana-4.1.11-linux-x64.tar.gz
-    dest="{{ ansible_env.HOME }}/kibana.tar.gz"
-    checksum=sha256:406fd817ce9e95bc65ac06361726361bdf82fdccdee1a7f6509fc10ab77654e9
+- include: kibana.yml
 
-- name: Unpack Kibana archive ({{ ansible_env.HOME }})
-  command: tar xf "{{ ansible_env.HOME }}/kibana.tar.gz"
-  args:
-    chdir: "{{ ansible_env.HOME }}"
+- include: socorro.yml
 
-- name: Clone Socorro repository ({{ socorro_working_dir }})
-  git:
-    repo=https://github.com/mozilla/socorro
-    dest="{{ socorro_working_dir }}"
-    version=206
-    force=yes # we will patch some files in working copy (like `bootstrap.sh` or `Procfile`)
-
-# Sometimes this URL return '500 Internal Error'
-- name: Patch bootstrap script
-  replace:
-    dest="{{ socorro_working_dir }}/scripts/bootstrap.sh"
-    regexp='https://index\.taskcluster\.net/v1/task/project\.socorro\.breakpad\.v1\.builds\.linux64\.latest/artifacts/public/breakpad\.tar\.gz'
-    backup=yes
-    replace='https://github.com/qedsoftware/ansible-socorro/releases/download/breakpad/breakpad.tar.gz'
-
-# 'wget -N' will fail if archive present
-- name: Remove breakpad archive
-  file:
-    dest="{{ socorro_working_dir }}/breakpad.tar.gz"
-    state=absent
-
-- name: Configure collector
-  template:
-    src=collector.j2
-    dest="{{ socorro_working_dir }}/config/SocorroWelcomeApp.ini"
-    backup=yes
-
-- name: Configure processor
-  template:
-    src=processor.j2
-    dest="{{ socorro_working_dir }}/config/processor.ini"
-    backup=yes
-
-- name: Configure Procfile
-  template:
-    src=Procfile.j2
-    dest="{{ socorro_working_dir }}/Procfile"
-    backup=yes
-
-- name: Create temporary symbols directory
-  file:
-    path="{{ socorro_symbols_temp_dir }}"
-    state=directory
-
-- name: Upload helper script
-  copy:
-    dest="{{ socorro_symbols_temp_dir }}/copy-symbol.sh"
-    src=copy-symbol.sh
-    mode=0755
-
-- name: Upload service waiting script
-  copy:
-    dest="{{ socorro_symbols_temp_dir }}/wait-for-port.sh"
-    src=wait-for-port.sh
-    mode=0755
-
-- name: Upload testing symbols
-  when: ansible_socorro_run_tests
-  copy:
-    dest="{{ socorro_symbols_temp_dir }}/{{ item }}"
-    src="{{ item }}"
-  with_items:
-    - "{{ socorro_upload_testing_symbols }}"
-
-- name: Copy testing symbols to directory
-  when: ansible_socorro_run_tests
-  command: ./copy-symbol.sh {{ item }} {{ socorro_symbols_dir }}
-  args:
-    chdir: "{{ socorro_symbols_temp_dir }}"
-  with_items:
-    - "{{ socorro_upload_testing_symbols }}"
-
-- name: Run build
-  make:
-    chdir: "{{ socorro_working_dir }}"
-    target: install
-    params:
-      NUM_THREADS=8
-  # If external 'virtualenv' already activated don't use it since we may
-  # have no permissions to modify it (see Travis CI run)
-  environment:
-    VIRTUAL_ENV: ""
+- include: nginx.yml
 
 # Needed for "Setup Elasticsearch database"
-- name: Start Elasticsearch service
-  service: name=elasticsearch state=started
-  become: yes
-  become_user: root
+- meta: flush_handlers
 
 - name: Waiting for Elasticsearch port
-  command: ./wait-for-port.sh 9200
-  args:
-    chdir: "{{ socorro_symbols_temp_dir }}"
+  wait_for:
+    port: 9200
+    delay: 10
 
 - name: Setup Elasticsearch database
   command: python ./setup_supersearch_app.py --elasticsearch.elasticsearch.elasticsearch_index=socorro_reports --resource.elasticsearch.elasticsearch_index=socorro_reports
@@ -241,50 +53,18 @@
     PATH: "{{ socorro_virtualenv_bin_dir }}:{{ ansible_env.PATH }}"
     VIRTUAL_ENV: ""
 
-- name: Start socorro-honcho service
-  service: name=socorro-honcho state=started
-  become: yes
-  become_user: root
+- meta: flush_handlers
 
 - name: Waiting for collector port
-  command: ./wait-for-port.sh 5000
-  args:
-    chdir: "{{ socorro_symbols_temp_dir }}"
+  wait_for:
+    port: 5000
+    delay: 10
 
-- name: Start socorro-kibana service
-  service: name=socorro-kibana state=started
-  become: yes
-  become_user: root
+- include: test.yml
 
-- name: Upload testing dump
-  when: ansible_socorro_run_tests
-  copy:
-    dest="{{ socorro_symbols_temp_dir }}/segfault.dmp"
-    src=segfault.dmp
-
-- name: Upload testing dump (remote test)
-  when: ansible_socorro_run_tests
-  command: "curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ inventory_hostname }}:5000/submit'"
-  args:
-    chdir: "{{ socorro_symbols_temp_dir }}"
-  register: x
-
-- debug: msg="{{ x.cmd }}"
-  when: ansible_socorro_run_tests
-- debug: msg="{{ x.stdout_lines }}"
-  when: ansible_socorro_run_tests
-
-- name: Upload testing dump (local test)
-  when: ansible_socorro_run_tests
-  local_action: "command curl -H 'Host: crash-reports' -F ProductName=Test -F Version=1.0 -F upload_file_minidump=@segfault.dmp 'http://{{ inventory_hostname }}:5000/submit'"
-  args:
-    chdir: "{{ role_path }}/files"
-  register: x
-  become: false
-
-- debug: msg="{{ x.cmd }}"
-  when: ansible_socorro_run_tests
-- debug: msg="{{ x.stdout_lines }}"
-  when: ansible_socorro_run_tests
-
-- debug: msg="Visit http://{{ inventory_hostname }}:5601 and search for 'socorro_reports'"
+- debug:
+    msg:
+      - "Visit http://{{ inventory_hostname }}:5601 and search for 'socorro_reports'"
+      - "Upload crash dumps to http://{{ inventory_hostname }}:5000/submit"
+      - "Symbol files are stored in {{ socorro_symbols_dir }}"
+      - "First line of symbols file contains important information"
