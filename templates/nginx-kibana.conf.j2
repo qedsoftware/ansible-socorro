@@ -1,0 +1,20 @@
+
+upstream kibana {
+    server 127.0.0.1:5601;
+}
+
+server {
+
+    # Running port
+    listen 8000;
+
+    auth_basic "Protected Kibana";
+    auth_basic_user_file /etc/nginx/kibana-passwords;
+
+    # Proxying connections to application servers
+    location / {
+        proxy_pass         http://kibana;
+        proxy_redirect     off;
+
+    }
+}

@@ -22,3 +22,36 @@
   become_user: root
   notify:
     - restart nginx
+
+- name: Configure Nginx for Kibana
+  template:
+    src=nginx-kibana.conf.j2
+    dest=/etc/nginx/sites-available/kibana.conf
+    backup=yes
+  become: yes
+  become_user: root
+  notify:
+    - restart nginx
+
+- name: Add passwords database
+  template:
+    src=passwords-template.j2
+    dest=/etc/nginx/kibana-passwords
+    backup=yes
+    mode=400
+    owner=www-data
+    force=no
+  become: yes
+  become_user: root
+  notify:
+    - restart nginx
+
+- name: Enable Nginx for Kibana
+  file:
+    src=/etc/nginx/sites-available/kibana.conf
+    dest=/etc/nginx/sites-enabled/kibana.conf
+    state=link
+  become: yes
+  become_user: root
+  notify:
+    - restart nginx

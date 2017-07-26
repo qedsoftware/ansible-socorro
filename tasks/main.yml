@@ -64,7 +64,9 @@
 
 - debug:
     msg:
-      - "Visit http://{{ inventory_hostname }}:5601 and search for 'socorro_reports'"
+      - "Visit http://{{ inventory_hostname }}:8000 and search for 'socorro_reports'"
       - "Upload crash dumps to http://{{ inventory_hostname }}:5000/submit"
       - "Symbol files are stored in {{ socorro_symbols_dir }}"
       - "First line of symbols file contains important information"
+      - "/etc/nginx/kibana-passwords contains credentials to access Kibana"
+      - "Make sure that port 5601 is accessible only from localhost."
