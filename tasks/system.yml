@@ -1,0 +1,71 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+# http://askubuntu.com/a/320271/206498
+- name: Cleanup packages
+  apt: name={{ item }} state=absent update_cache=no purge=yes
+  with_items:
+    - node
+  become: yes
+  become_user: root
+
+- name: nginx repo
+  apt_repository: repo='ppa:nginx/stable'
+  become: yes
+  become_user: root
+
+- name: Install dependencies
+  apt: name={{ item }} state=latest update_cache=yes cache_valid_time=3600
+  with_items:
+    - build-essential
+    - subversion
+    - libpq-dev
+    - openjdk-7-jre
+    - python-virtualenv
+    - python-dev
+    - rsync
+    - python2.7
+    - python2.7-dev
+    - libxslt1-dev
+    - git-core
+    - mercurial
+    - node-less
+    - rabbitmq-server
+    - memcached
+    - libsasl2-dev
+    - libcurl4-openssl-dev
+    - npm
+    - nodejs-legacy
+    - libffi-dev # needed for Ubuntu 14.04 (trusty)
+    - nginx
+    - uwsgi
+  become: yes
+  become_user: root
+
+- name: Test 'npm'
+  shell: npm --version
+  register: x
+
+- name: "'npm' version"
+  debug:
+    msg: "npm version {{ x.stdout_lines }}"
+
+- name: Test 'node'
+  shell: /usr/bin/env node --version
+  register: x
+
+- name: "'node' version"
+  debug:
+    msg: "node version {{ x.stdout_lines }}"
+
+- name: Add Nginx to Socorro group
+  user:
+    name: www-data
+    groups: socorro
+    append: yes
+  become: yes
+  become_user: root
+  notify:
+    - restart nginx

@@ -2,8 +2,8 @@
 
 description "Start kibana for Socorro"
 
-start on startup
-stop on shutdown
+start on runlevel [2345]
+stop on runlevel [!2345]
 
 console log
 

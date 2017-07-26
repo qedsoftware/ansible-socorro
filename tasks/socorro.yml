@@ -1,0 +1,93 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+- name: Clone Socorro repository ({{ socorro_working_dir }})
+  git:
+    repo=https://github.com/mozilla/socorro
+    dest="{{ socorro_working_dir }}"
+    version=206
+    force=yes # we will patch some files in working copy (like `bootstrap.sh` or `Procfile`)
+  notify:
+    - restart collector-uwsgi
+    - restart processor
+
+# Sometimes this URL return '500 Internal Error'
+- name: Patch bootstrap script
+  replace:
+    dest="{{ socorro_working_dir }}/scripts/bootstrap.sh"
+    regexp='https://index\.taskcluster\.net/v1/task/project\.socorro\.breakpad\.v1\.builds\.linux64\.latest/artifacts/public/breakpad\.tar\.gz'
+    backup=yes
+    replace='https://github.com/qedsoftware/ansible-socorro/releases/download/breakpad/breakpad.tar.gz'
+  notify:
+    - restart collector-uwsgi
+    - restart processor
+
+# 'wget -N' will fail if archive present
+- name: Remove breakpad archive
+  file:
+    dest="{{ socorro_working_dir }}/breakpad.tar.gz"
+    state=absent
+  notify:
+    - restart collector-uwsgi
+    - restart processor
+
+- name: Add socorro-collector-uwsgi service
+  template:
+    src=upstart-collector-uwsgi.conf.j2
+    dest=/etc/init/socorro-collector-uwsgi.conf
+    backup=yes
+  become: yes
+  become_user: root
+  notify:
+    - restart collector-uwsgi
+
+- name: Add socorro-processor service
+  template:
+    src=upstart-processor.conf.j2
+    dest=/etc/init/socorro-processor.conf
+    backup=yes
+  become: yes
+  become_user: root
+  notify:
+    - restart processor
+
+- name: Configure collector
+  template:
+    src=collector.ini.j2
+    dest="{{ socorro_working_dir }}/config/SocorroWelcomeApp.ini"
+    backup=yes
+  notify:
+    - restart collector-uwsgi
+
+- name: Configure processor
+  template:
+    src=processor.ini.j2
+    dest="{{ socorro_working_dir }}/config/processor.ini"
+    backup=yes
+  notify:
+    - restart processor
+
+
+- name: Run build
+  make:
+    chdir: "{{ socorro_working_dir }}"
+    target: install
+    params:
+      NUM_THREADS=8
+  # If external 'virtualenv' already activated don't use it since we may
+  # have no permissions to modify it (see Travis CI run)
+  environment:
+    VIRTUAL_ENV: ""
+  notify:
+    - restart collector-uwsgi
+    - restart processor
+
+- name: Configure uWSGI for Socorro Collector
+  template:
+    src=uwsgi-collector.ini.j2
+    dest={{ socorro_working_dir }}/uwsgi.ini
+    backup=yes
+  notify:
+    - restart collector-uwsgi

@@ -1,9 +1,11 @@
 #!upstart
 
-description "Start honcho server for Socorro"
+description "Start Socorro Collector uWSGI server"
 
-start on startup
-stop on shutdown
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+reload signal SIGHUP
 
 console log
 
@@ -13,4 +15,4 @@ chdir "{{ socorro_working_dir }}"
 
 env PATH="{{ socorro_virtualenv_bin_dir }}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-exec honcho start
+exec uwsgi --ini {{ socorro_working_dir }}/uwsgi.ini

@@ -6,6 +6,7 @@
 ansible_socorro_run_tests: True
 
 socorro_working_dir: "{{ ansible_env.HOME }}/socorro"
-socorro_virtualenv_bin_dir: "{{ socorro_working_dir }}/socorro-virtualenv/bin"
+socorro_virtualenv: "{{ socorro_working_dir }}/socorro-virtualenv"
+socorro_virtualenv_bin_dir: "{{ socorro_virtualenv }}/bin"
 socorro_symbols_dir: "{{ ansible_env.HOME }}/socorro-symbols"
 socorro_symbols_temp_dir: "{{ ansible_env.HOME }}/__temp-symbols"

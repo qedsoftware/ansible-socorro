@@ -1,0 +1,35 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+# ubuntu nginx comes with bugge init script that always returns 0
+# https://bugs.launchpad.net/ubuntu/+source/nginx/+bug/1505734
+# so, this.
+# warns about "use service module", but it gulps stdout if everything is okay
+- name: restart nginx
+  command: service nginx restart
+  register: nginx_restart_reg
+  failed_when: "'fail' in nginx_restart_reg.stdout"
+  become: yes
+  become_user: root
+
+- name: restart collector-uwsgi
+  service: name=socorro-collector-uwsgi state=restarted
+  become: yes
+  become_user: root
+
+- name: restart processor
+  service: name=socorro-processor state=restarted
+  become: yes
+  become_user: root
+
+- name: restart kibana
+  service: name=socorro-kibana state=restarted
+  become: yes
+  become_user: root
+
+- name: restart elasticsearch
+  service: name=elasticsearch state=restarted
+  become: yes
+  become_user: root
