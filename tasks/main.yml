@@ -5,6 +5,8 @@
 
 - include: system.yml
 
+- include: remove_honcho.yml
+
 - include: elasticsearch.yml
 
 - name: Check port 5000

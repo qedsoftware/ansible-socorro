@@ -1,0 +1,22 @@
+# Copyright (c) 2016, Quantitative Engineering Design Inc.
+# All Rights Reserved.
+
+---
+
+- name: Stop Honcho service
+  service: name=socorro-honcho state=stopped
+  become: yes
+  become_user: root
+  ignore_errors: True
+
+- name: Remove Honcho service
+  file:
+    path=/etc/init/socorro-honcho.conf
+    state=absent
+  become: yes
+  become_user: root
+
+- name: Remove Procfile
+  file:
+    path="{{ socorro_working_dir }}/Procfile"
+    state=absent
