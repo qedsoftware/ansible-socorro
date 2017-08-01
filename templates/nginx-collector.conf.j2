@@ -6,7 +6,29 @@ upstream collector {
 server {
 
     # Running port
-    listen 5000;
+    listen 5000 ssl http2;
+
+    ssl on;
+    ssl_certificate     {{ssl_cert}}; # full path to SSL certificate and CA certificate concatenated together
+    ssl_certificate_key {{ssl_key}};  # full path to SSL key
+
+    access_log      /var/log/nginx/socorro_collector_access.log combined;
+    error_log       /var/log/nginx/socorro_collector_error.log error;
+
+    # performance enhancement for SSL
+    ssl_stapling on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 5m;
+
+    ssl_dhparam /etc/ssl/private/dhparams.pem;
+
+    # config to enable HSTS(HTTP Strict Transport Security) https://developer.mozilla.org/en-US/docs/Security/HTTP_Strict_Transport_Security
+    # to avoid ssl stripping https://en.wikipedia.org/wiki/SSL_stripping#SSL_stripping
+    add_header Strict-Transport-Security "max-age=31536000;";
+
+    ssl_ciphers {{ssl_ciphers}};
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2; # enables TLSv1.0, 1.1, and 1.2 but not SSLv2 or 3 as they are both weak and deprecated.
+    ssl_prefer_server_ciphers on; # Specifies that server ciphers should be preferred over client (e.g. browser) ciphers when using SSL/TLS.
 
     # Proxying connections to application servers
     location / {

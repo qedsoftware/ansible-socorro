@@ -3,6 +3,37 @@
 
 ---
 
+- name: Create dhparams.pem if not present
+  command: openssl dhparam -out /etc/ssl/private/dhparams.pem 2048 creates=/etc/ssl/private/dhparams.pem
+  become: yes
+  become_user: root
+
+- name: Put out cert for SSL
+  no_log: True  # there are private keys in this keys, don't put it on console
+  copy:
+    src: "ssl_certs/{{ ssl_cert | basename }}"
+    dest: "{{ ssl_cert }}"
+    mode: 0644
+    owner: root
+    group: root
+  become: yes
+  become_user: root
+  notify:
+    - restart nginx
+
+- name: Put out key for SSL
+  no_log: True  # there are private keys in this keys, don't put it on console
+  copy:
+    content: "{{ ssl_key_content }}"
+    dest: "{{ ssl_key }}"
+    mode: 0600
+    owner: root
+    group: root
+  become: yes
+  become_user: root
+  notify:
+    - restart nginx
+
 - name: Configure Nginx for Socorro Collector
   template:
     src=nginx-collector.conf.j2

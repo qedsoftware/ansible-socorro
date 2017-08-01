@@ -23,3 +23,23 @@
     socorro_upload_testing_symbols:
       - demoapp.sym
       - libMakeSegv.so.sym
+    ssl_key: "/etc/ssl/private/socorro.key"
+    ssl_cert: "/etc/ssl/private/socorro.crt"
+    ssl_ciphers: 'ECDHE-RSA-AES128-GCM-SHA256'
+    ssl_key_content: |
+      -----BEGIN RSA PRIVATE KEY-----
+      MIICXQIBAAKBgQDU6dbICHAi4Y7ebRHlN0EzTErDCDjX5k1i4egm7/OMwJ+wNav0
+      yCY8U087+iAf3yvW/ynoVL/ZOOENNxOPnS8mMT9wNTnPIOgemM3dqYK3MjRIOB0K
+      FSUA59nKJenttc0CXVQmQC9NXOMw3MGNRTsZsRTd7FaeyzvD25Tmx0+8BQIDAQAB
+      AoGAbaA5RqWRl2Qr+7qNDEh2+cK+e80v93pNPiyzK9lAvagwkLoR3+duSIFcurT+
+      9WojWH/pRAbfASmYNwW0vK1iKIekoSkvcLqcLb/PgamUTBr2Ncqum0iLeU/NbW5J
+      Y8rzJM5iU1j7a2SpHZ5iOsr+zm81TljQ2euHq4eFxEXJ4gECQQDr1jSp11nTG84J
+      r1fIG0NK+E4bUyupAjVu6NfoXe18Pk89QsFjIQ+UCDtsnW2N2oLMlxNwGHdsb7yt
+      WbCIVm5tAkEA5x3oSo+JvdwIAGRO0wkYBVHxH4wJ8fjIHAforv1bt0JZxk+HnXWg
+      tl7i7kLDulbOn4Q+LdWe9ibFJ01zlDMk+QJBAI99xo8sM0AKY+Nqp0teoyQDTmq7
+      wQ3VBTPVQkDknXGB6+6HJmktHXBhTd65LoYn1Hus1CvZBxiYJ8GFl65sgEUCQQCX
+      ogGj2aTvkgsV5rnor9C4vNhMcF6eCTGRYocBOG0SQVARUmCRqHk27e5JkDhGa2nJ
+      MsRw4fUXXrx/Wst38k5RAkBoLZS9FoIW6I571ZnEcBb2zVu/PnmWNSrs4PNghU+C
+      vwpMcSOuEqeqWsDnvkHiIoo8/qpmZZiNTvyLLgib3zsn
+      -----END RSA PRIVATE KEY-----
+
